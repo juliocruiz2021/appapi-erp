@@ -3,13 +3,17 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Api\System\TenantRegistrationController;
+use App\Http\Controllers\Api\Tenant\AccountsPayableController;
 use App\Http\Controllers\Api\Tenant\AuthController;
 use App\Http\Controllers\Api\Tenant\BranchController;
 use App\Http\Controllers\Api\Tenant\CategoryController;
 use App\Http\Controllers\Api\Tenant\PermissionController;
 use App\Http\Controllers\Api\Tenant\PointOfSaleController;
 use App\Http\Controllers\Api\Tenant\ProductController;
+use App\Http\Controllers\Api\Tenant\PurchaseOrderController;
+use App\Http\Controllers\Api\Tenant\PurchaseReceptionController;
 use App\Http\Controllers\Api\Tenant\StockController;
+use App\Http\Controllers\Api\Tenant\SupplierController;
 use App\Http\Controllers\Api\Tenant\TaxController;
 use App\Http\Controllers\Api\Tenant\UnitController;
 use App\Http\Controllers\Api\Tenant\UserController;
@@ -156,6 +160,50 @@ $tenantRoutes = function (): void {
             ->middleware('role_or_permission:SuperAdmin|stock.adjust');
         Route::get('/products/{product}/movements', [StockController::class, 'movements'])
             ->middleware('role_or_permission:SuperAdmin|stock.view');
+
+        // ── Proveedores ───────────────────────────────────────────────────────
+        Route::get('/suppliers', [SupplierController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|suppliers.view');
+        Route::post('/suppliers', [SupplierController::class, 'store'])
+            ->middleware('role_or_permission:SuperAdmin|suppliers.create');
+        Route::get('/suppliers/{supplier}', [SupplierController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|suppliers.view');
+        Route::match(['put', 'patch'], '/suppliers/{supplier}', [SupplierController::class, 'update'])
+            ->middleware('role_or_permission:SuperAdmin|suppliers.update');
+        Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])
+            ->middleware('role_or_permission:SuperAdmin|suppliers.delete');
+
+        // ── Órdenes de compra ─────────────────────────────────────────────────
+        Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-orders.view');
+        Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-orders.create');
+        Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-orders.view');
+        Route::match(['put', 'patch'], '/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-orders.update');
+        Route::patch('/purchase-orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-orders.approve');
+        Route::delete('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-orders.delete');
+
+        // ── Recepciones de compra ─────────────────────────────────────────────
+        Route::get('/purchase-receptions', [PurchaseReceptionController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-receptions.view');
+        Route::post('/purchase-receptions', [PurchaseReceptionController::class, 'store'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-receptions.create');
+        Route::get('/purchase-receptions/{purchaseReception}', [PurchaseReceptionController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|purchase-receptions.view');
+
+        // ── Cuentas por pagar ─────────────────────────────────────────────────
+        Route::get('/accounts-payable', [AccountsPayableController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|accounts-payable.view');
+        Route::get('/accounts-payable/{accountPayable}', [AccountsPayableController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|accounts-payable.view');
+        Route::post('/accounts-payable/{accountPayable}/pay', [AccountsPayableController::class, 'pay'])
+            ->middleware('role_or_permission:SuperAdmin|accounts-payable.pay');
+        Route::patch('/accounts-payable/{accountPayable}/cancel', [AccountsPayableController::class, 'cancel'])
+            ->middleware('role_or_permission:SuperAdmin|accounts-payable.pay');
 
         // ── Configuración operacional de usuario ──────────────────────────────
         Route::get('/me/config', [UserOperationalConfigController::class, 'myConfig']);

@@ -8,6 +8,7 @@ use App\Models\Branch;
 use App\Models\PointOfSale;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\UserOperationalConfig;
 use App\Models\Warehouse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
@@ -177,7 +178,19 @@ class TenantProvisioningService
                 ],
             );
 
-            $this->seedInitialStructure();
+            [$branch, $warehouse, $pos] = $this->seedInitialStructure();
+
+            UserOperationalConfig::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'branch_id'           => $branch->id,
+                    'warehouse_id'        => $warehouse->id,
+                    'point_of_sale_id'    => $pos->id,
+                    'branch_locked'       => false,
+                    'warehouse_locked'    => false,
+                    'point_of_sale_locked' => false,
+                ],
+            );
 
             return $this->tenantAccessService->syncUserAccess(
                 $user,
@@ -189,7 +202,10 @@ class TenantProvisioningService
         return $user;
     }
 
-    private function seedInitialStructure(): void
+    /**
+     * @return array{0: Branch, 1: Warehouse, 2: PointOfSale}
+     */
+    private function seedInitialStructure(): array
     {
         $branch = Branch::firstOrCreate(
             ['code' => 'M001'],
@@ -201,9 +217,11 @@ class TenantProvisioningService
             ['name' => 'BODEGA PRINCIPAL', 'is_active' => true],
         );
 
-        PointOfSale::firstOrCreate(
+        $pos = PointOfSale::firstOrCreate(
             ['branch_id' => $branch->id, 'code' => 'P001'],
             ['name' => 'PUNTO DE VENTA 1', 'is_active' => true],
         );
+
+        return [$branch, $warehouse, $pos];
     }
 }

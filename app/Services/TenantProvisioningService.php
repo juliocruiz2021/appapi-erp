@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Branch;
+use App\Models\PointOfSale;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Hash;
@@ -174,6 +177,8 @@ class TenantProvisioningService
                 ],
             );
 
+            $this->seedInitialStructure();
+
             return $this->tenantAccessService->syncUserAccess(
                 $user,
                 [$role->name],
@@ -182,5 +187,23 @@ class TenantProvisioningService
         });
 
         return $user;
+    }
+
+    private function seedInitialStructure(): void
+    {
+        $branch = Branch::firstOrCreate(
+            ['code' => 'M001'],
+            ['name' => 'CASA MATRIZ', 'is_active' => true],
+        );
+
+        $warehouse = Warehouse::firstOrCreate(
+            ['branch_id' => $branch->id, 'code' => 'B001'],
+            ['name' => 'BODEGA PRINCIPAL', 'is_active' => true],
+        );
+
+        PointOfSale::firstOrCreate(
+            ['branch_id' => $branch->id, 'code' => 'P001'],
+            ['name' => 'PUNTO DE VENTA 1', 'is_active' => true],
+        );
     }
 }

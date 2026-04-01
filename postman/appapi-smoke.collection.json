@@ -1,0 +1,110 @@
+{
+  "info": {
+    "_postman_id": "54b54f9c-545a-4d99-a6e6-appapi-smoke",
+    "name": "AppAPI Smoke Demo1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const rawBaseUrl = (pm.variables.get('base_url') || 'http://127.0.0.1:8000').trim();",
+          "const tenant = (pm.variables.get('tenant') || 'demo1').trim();",
+          "const normalizedBaseUrl = rawBaseUrl.replace(/\\/+$/, '').replace(/\\/api(?:\\/v\\d+)?$/, '');",
+          "pm.collectionVariables.set('normalized_base_url', normalizedBaseUrl);",
+          "pm.collectionVariables.set('tenant_api_base', `${normalizedBaseUrl}/${tenant}/api/v1`);",
+          "pm.collectionVariables.set('tenant_login_url', `${normalizedBaseUrl}/${tenant}/api/v1/login`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "tenant", "value": "demo1" },
+    { "key": "normalized_base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "tenant_api_base", "value": "http://127.0.0.1:8000/demo1/api/v1" },
+    { "key": "tenant_login_url", "value": "http://127.0.0.1:8000/demo1/api/v1/login" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Login Admin",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "const token = json?.data?.access_token || json?.access_token;",
+              "if (token) pm.collectionVariables.set('token', token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@demo1.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{tenant_login_url}}",
+          "host": ["{{normalized_base_url}}"],
+          "path": ["{{tenant}}", "api", "v1", "login"]
+        }
+      }
+    },
+    {
+      "name": "Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{tenant_api_base}}/me",
+          "host": ["{{normalized_base_url}}"],
+          "path": ["{{tenant}}", "api", "v1", "me"]
+        }
+      }
+    },
+    {
+      "name": "List Users",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{tenant_api_base}}/users",
+          "host": ["{{normalized_base_url}}"],
+          "path": ["{{tenant}}", "api", "v1", "users"]
+        }
+      }
+    },
+    {
+      "name": "List Permissions",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": {
+          "raw": "{{tenant_api_base}}/permissions",
+          "host": ["{{normalized_base_url}}"],
+          "path": ["{{tenant}}", "api", "v1", "permissions"]
+        }
+      }
+    }
+  ]
+}

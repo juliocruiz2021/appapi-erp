@@ -1,0 +1,348 @@
+{
+  "info": {
+    "_postman_id": "appapi-full-collection-v1",
+    "name": "AppAPI - Colección Completa",
+    "description": "Todos los endpoints: System, Auth, Users CRUD, Permissions CRUD. El token se guarda automáticamente al hacer Login.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const base = (pm.collectionVariables.get('base_url') || 'http://127.0.0.1:8000').replace(/\\/+$/, '');",
+          "const tenant = pm.collectionVariables.get('tenant') || 'demo1';",
+          "pm.collectionVariables.set('api_base', `${base}/${tenant}/api/v1`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url",    "value": "http://127.0.0.1:8000" },
+    { "key": "tenant",      "value": "demo1" },
+    { "key": "api_base",    "value": "http://127.0.0.1:8000/demo1/api/v1" },
+    { "key": "token",       "value": "" },
+    { "key": "user_id",     "value": "" },
+    { "key": "permission_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Registrar nuevo tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"Mi Empresa SA\",\n  \"tenant_id\": \"miempresa\",\n  \"path\": \"miempresa\",\n  \"admin_name\": \"Administrador\",\n  \"admin_email\": \"admin@miempresa.com\",\n  \"admin_password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/system/register",
+              "host": ["{{base_url}}"],
+              "path": ["system", "register"]
+            },
+            "description": "Crea un nuevo tenant con su base de datos propia y un usuario SuperAdmin.\n\nCampos:\n- company_name (requerido): Nombre de la empresa\n- tenant_id (requerido): Identificador único del tenant (solo letras, números, guiones)\n- path (opcional): Segmento URL para el tenant (si no se pone, usa tenant_id)\n- admin_name (opcional): Nombre del admin\n- admin_email (requerido): Email del admin\n- admin_password (requerido, mín 8 chars): Contraseña del admin"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json?.data?.access_token || json?.access_token;",
+                  "if (token) {",
+                  "    pm.collectionVariables.set('token', token);",
+                  "    console.log('Token guardado:', token.substring(0, 30) + '...');",
+                  "} else {",
+                  "    console.warn('No se encontró token en la respuesta');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@demo1.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/login",
+              "host": ["{{api_base}}"],
+              "path": ["login"]
+            },
+            "description": "Autentica al usuario y guarda el JWT automáticamente en la variable {{token}}."
+          }
+        },
+        {
+          "name": "Me (usuario autenticado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/me",
+              "host": ["{{api_base}}"],
+              "path": ["me"]
+            },
+            "description": "Devuelve los datos del usuario autenticado junto con sus roles y permisos."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users?per_page=15&page=1",
+              "host": ["{{api_base}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "per_page",   "value": "15",    "description": "Resultados por página (máx 100)" },
+                { "key": "page",       "value": "1" },
+                { "key": "search",     "value": "",      "disabled": true, "description": "Buscar por nombre o email" },
+                { "key": "role",       "value": "",      "disabled": true, "description": "Filtrar por nombre de rol" },
+                { "key": "permission", "value": "",      "disabled": true, "description": "Filtrar por nombre de permiso" }
+              ]
+            },
+            "description": "Lista paginada de usuarios. Soporta filtros por búsqueda, rol y permiso."
+          }
+        },
+        {
+          "name": "Crear usuario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json?.data?.id;",
+                  "if (id) {",
+                  "    pm.collectionVariables.set('user_id', id);",
+                  "    console.log('user_id guardado:', id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Authorization","value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Prueba\",\n  \"email\": \"usuario.prueba@demo1.com\",\n  \"password\": \"password123\",\n  \"roles\": [],\n  \"permissions\": [\"users.view\"]\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/users",
+              "host": ["{{api_base}}"],
+              "path": ["users"]
+            },
+            "description": "Crea un usuario. El ID se guarda automáticamente en {{user_id}}.\n\nCampos:\n- name (requerido, máx 120)\n- email (requerido, único)\n- password (requerido, mín 8)\n- roles (opcional): array de nombres de roles existentes, ej: [\"SuperAdmin\"]\n- permissions (opcional): array de nombres de permisos existentes"
+          }
+        },
+        {
+          "name": "Ver usuario",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users/{{user_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Obtiene un usuario por su ID con roles y permisos asignados."
+          }
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Authorization","value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Prueba Actualizado\",\n  \"roles\": [\"SuperAdmin\"],\n  \"permissions\": []\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/users/{{user_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Actualiza datos del usuario. Todos los campos son opcionales.\n\nNota: Si envías 'roles' o 'permissions', se reemplazan completamente (sync). No puedes eliminar el último SuperAdmin del tenant."
+          }
+        },
+        {
+          "name": "Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/users/{{user_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Elimina un usuario.\n\nRestricciones:\n- No puedes eliminarte a ti mismo\n- No puedes eliminar al último SuperAdmin del tenant"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "Listar permisos",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/permissions?per_page=15",
+              "host": ["{{api_base}}"],
+              "path": ["permissions"],
+              "query": [
+                { "key": "per_page", "value": "15" },
+                { "key": "page",     "value": "1" },
+                { "key": "search",   "value": "", "disabled": true, "description": "Buscar por nombre" }
+              ]
+            },
+            "description": "Lista paginada de permisos con conteo de usuarios y roles que los usan."
+          }
+        },
+        {
+          "name": "Crear permiso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json?.data?.id;",
+                  "if (id) {",
+                  "    pm.collectionVariables.set('permission_id', id);",
+                  "    console.log('permission_id guardado:', id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Authorization","value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"reportes.ver\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/permissions",
+              "host": ["{{api_base}}"],
+              "path": ["permissions"]
+            },
+            "description": "Crea un permiso personalizado. El ID se guarda en {{permission_id}}.\n\nEl nombre solo puede contener letras, números, puntos, guiones y guiones bajos.\nEjemplos válidos: 'reportes.ver', 'facturas.crear', 'clientes-exportar'"
+          }
+        },
+        {
+          "name": "Ver permiso",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/permissions/{{permission_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["permissions", "{{permission_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Actualizar permiso",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept",       "value": "application/json" },
+              { "key": "Authorization","value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"reportes.leer\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/permissions/{{permission_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["permissions", "{{permission_id}}"]
+            },
+            "description": "Renombra un permiso.\n\nRestricciones: Los permisos del sistema (users.*, permissions.*) no pueden renombrarse."
+          }
+        },
+        {
+          "name": "Eliminar permiso",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept",        "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/permissions/{{permission_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["permissions", "{{permission_id}}"]
+            },
+            "description": "Elimina un permiso personalizado.\n\nRestricciones: Los permisos del sistema (users.*, permissions.*) no pueden eliminarse."
+          }
+        }
+      ]
+    }
+  ]
+}

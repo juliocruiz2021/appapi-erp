@@ -1,0 +1,330 @@
+{
+  "info": {
+    "_postman_id": "5ca96ae8-9177-4b1f-b2d0-appapi-multitenant-management",
+    "name": "AppAPI Multitenant Management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const rawBaseUrl = (pm.variables.get('base_url') || 'http://127.0.0.1:8000').trim();",
+          "const tenant = (pm.variables.get('tenant') || 'demo1').trim();",
+          "const normalizedBaseUrl = rawBaseUrl.replace(/\\/+$/, '').replace(/\\/api(?:\\/v\\d+)?$/, '');",
+          "pm.collectionVariables.set('normalized_base_url', normalizedBaseUrl);",
+          "pm.collectionVariables.set('tenant_api_base', `${normalizedBaseUrl}/${tenant}/api/v1`);",
+          "pm.collectionVariables.set('tenant_login_url', `${normalizedBaseUrl}/${tenant}/api/v1/login`);",
+          "pm.collectionVariables.set('tenant_me_url', `${normalizedBaseUrl}/${tenant}/api/v1/me`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "tenant", "value": "demo1" },
+    { "key": "normalized_base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "tenant_api_base", "value": "http://127.0.0.1:8000/demo1/api/v1" },
+    { "key": "tenant_login_url", "value": "http://127.0.0.1:8000/demo1/api/v1/login" },
+    { "key": "tenant_me_url", "value": "http://127.0.0.1:8000/demo1/api/v1/me" },
+    { "key": "token", "value": "" },
+    { "key": "user_id", "value": "" },
+    { "key": "permission_id", "value": "" },
+    { "key": "admin_email", "value": "admin@demo1.com" },
+    { "key": "admin_password", "value": "password123" },
+    { "key": "tenant_company_name", "value": "Demo1 Company" },
+    { "key": "new_tenant_id", "value": "demo2" },
+    { "key": "new_tenant_path", "value": "demo2" },
+    { "key": "new_tenant_admin_email", "value": "admin@demo2.com" },
+    { "key": "new_tenant_admin_password", "value": "password123" },
+    { "key": "test_user_email", "value": "user.postman@demo1.com" },
+    { "key": "test_user_password", "value": "password123" },
+    { "key": "custom_permission_name", "value": "reports.postman.view" },
+    { "key": "custom_permission_name_updated", "value": "reports.postman.read" }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Register Tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"company_name\": \"{{tenant_company_name}}\",\n  \"tenant_id\": \"{{new_tenant_id}}\",\n  \"path\": \"{{new_tenant_path}}\",\n  \"admin_name\": \"Demo2 Admin\",\n  \"admin_email\": \"{{new_tenant_admin_email}}\",\n  \"admin_password\": \"{{new_tenant_admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/system/register",
+              "host": ["{{base_url}}"],
+              "path": ["system", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const token = json?.data?.access_token || json?.access_token;",
+                  "if (token) pm.collectionVariables.set('token', token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{tenant_login_url}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "login"]
+            }
+          }
+        },
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_me_url}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "List Permissions",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_api_base}}/permissions",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "permissions"]
+            }
+          }
+        },
+        {
+          "name": "Create Permission",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json?.data?.id || json?.id;",
+                  "if (id) pm.collectionVariables.set('permission_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{custom_permission_name}}\"\n}"
+            },
+            "url": {
+              "raw": "{{tenant_api_base}}/permissions",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "permissions"]
+            }
+          }
+        },
+        {
+          "name": "Show Permission",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_api_base}}/permissions/{{permission_id}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "permissions", "{{permission_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Permission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{custom_permission_name_updated}}\"\n}"
+            },
+            "url": {
+              "raw": "{{tenant_api_base}}/permissions/{{permission_id}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "permissions", "{{permission_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Permission",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_api_base}}/permissions/{{permission_id}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "permissions", "{{permission_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_api_base}}/users",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "const id = json?.data?.id || json?.id;",
+                  "if (id) pm.collectionVariables.set('user_id', id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Postman\",\n  \"email\": \"{{test_user_email}}\",\n  \"password\": \"{{test_user_password}}\",\n  \"permissions\": [\n    \"users.view\",\n    \"permissions.view\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{tenant_api_base}}/users",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "users"]
+            }
+          }
+        },
+        {
+          "name": "Show User",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_api_base}}/users/{{user_id}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Usuario Postman Editado\",\n  \"permissions\": [\n    \"permissions.view\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{tenant_api_base}}/users/{{user_id}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "users", "{{user_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{tenant_api_base}}/users/{{user_id}}",
+              "host": ["{{normalized_base_url}}"],
+              "path": ["{{tenant}}", "api", "v1", "users", "{{user_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

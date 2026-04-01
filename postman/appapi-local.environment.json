@@ -1,0 +1,22 @@
+{
+  "id": "b6d5ebf6-5e9b-4f08-a74e-appapi-local-env",
+  "name": "AppAPI Local",
+  "values": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "text", "enabled": true },
+    { "key": "tenant", "value": "demo1", "type": "text", "enabled": true },
+    { "key": "tenant_api_base_hint", "value": "http://127.0.0.1:8000/demo1/api/v1", "type": "text", "enabled": true },
+    { "key": "tenant_login_url_hint", "value": "http://127.0.0.1:8000/demo1/api/v1/login", "type": "text", "enabled": true },
+    { "key": "admin_email", "value": "admin@demo1.com", "type": "text", "enabled": true },
+    { "key": "admin_password", "value": "password123", "type": "text", "enabled": true },
+    { "key": "token", "value": "", "type": "text", "enabled": true },
+    { "key": "user_id", "value": "", "type": "text", "enabled": true },
+    { "key": "permission_id", "value": "", "type": "text", "enabled": true },
+    { "key": "test_user_email", "value": "user.postman@demo1.com", "type": "text", "enabled": true },
+    { "key": "test_user_password", "value": "password123", "type": "text", "enabled": true },
+    { "key": "custom_permission_name", "value": "reports.postman.view", "type": "text", "enabled": true },
+    { "key": "custom_permission_name_updated", "value": "reports.postman.read", "type": "text", "enabled": true }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-03-13T19:58:00.000Z",
+  "_postman_exported_using": "OpenAI Codex"
+}

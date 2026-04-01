@@ -3,6 +3,7 @@
 use App\Http\Middleware\AssignRequestContext;
 use App\Http\Middleware\EnsureJwtBelongsToTenant;
 use App\Http\Middleware\InitializeTenantBySegment;
+use Illuminate\Http\Middleware\HandleCors;
 use App\Support\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -35,6 +36,7 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(HandleCors::class);
         $middleware->append(AssignRequestContext::class);
         $middleware->append(InitializeTenantBySegment::class);
         $middleware->redirectGuestsTo(static fn () => null);

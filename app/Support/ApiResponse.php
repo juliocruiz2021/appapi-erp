@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Arr;
@@ -42,6 +43,25 @@ class ApiResponse
                 'last_page' => $paginator->lastPage(),
                 'from' => $paginator->firstItem(),
                 'to' => $paginator->lastItem(),
+            ],
+        ]);
+    }
+
+    /**
+     * Respuesta con cursor pagination (scroll infinito, alto desempeño).
+     * No hace COUNT(*) — ideal para tablas grandes.
+     */
+    public static function cursor(
+        string $message,
+        CursorPaginator $paginator,
+        array $data,
+    ): JsonResponse {
+        return self::success($message, $data, 200, [
+            'pagination' => [
+                'per_page'    => $paginator->perPage(),
+                'next_cursor' => $paginator->nextCursor()?->encode(),
+                'prev_cursor' => $paginator->previousCursor()?->encode(),
+                'has_more'    => $paginator->hasMorePages(),
             ],
         ]);
     }

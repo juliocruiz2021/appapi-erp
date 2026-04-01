@@ -1,0 +1,326 @@
+{
+  "info": {
+    "_postman_id": "erp-etapa1-estructura",
+    "name": "ERP Etapa 1 — Estructura Organizacional",
+    "description": "Sucursales, Bodegas, Puntos de Venta, Impuestos, Config Operacional de Usuario.\nCursor pagination en todas las listas (scroll infinito).\nEjecuta 'Login Admin' primero — el token se guarda automáticamente.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const base = (pm.collectionVariables.get('base_url') || 'http://127.0.0.1:8000').replace(/\\/+$/, '');",
+          "const tenant = pm.collectionVariables.get('tenant') || 'demo1';",
+          "pm.collectionVariables.set('api_base', `${base}/${tenant}/api/v1`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url",        "value": "http://127.0.0.1:8000" },
+    { "key": "tenant",          "value": "demo1" },
+    { "key": "api_base",        "value": "http://127.0.0.1:8000/demo1/api/v1" },
+    { "key": "token",           "value": "" },
+    { "key": "branch_id",       "value": "" },
+    { "key": "warehouse_id",    "value": "" },
+    { "key": "pos_id",          "value": "" },
+    { "key": "tax_id",          "value": "" },
+    { "key": "next_cursor",     "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login Admin",
+          "event": [{"listen": "test","script": {"type": "text/javascript","exec": ["const j = pm.response.json();","const t = j?.data?.access_token;","if (t) pm.collectionVariables.set('token', t);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"}],
+            "body": {"mode": "raw","raw": "{\n  \"email\": \"admin@demo1.com\",\n  \"password\": \"password123\"\n}"},
+            "url": {"raw": "{{api_base}}/login","host": ["{{api_base}}"],"path": ["login"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sucursales (Branches)",
+      "item": [
+        {
+          "name": "Listar sucursales",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {
+              "raw": "{{api_base}}/branches?per_page=20",
+              "host": ["{{api_base}}"],"path": ["branches"],
+              "query": [
+                {"key": "per_page","value": "20"},
+                {"key": "search","value": "","disabled": true,"description": "Buscar por nombre o código"},
+                {"key": "active_only","value": "true","disabled": true},
+                {"key": "cursor","value": "{{next_cursor}}","disabled": true,"description": "Para scroll infinito: pasa el next_cursor de la respuesta anterior"}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear sucursal",
+          "event": [{"listen": "test","script": {"type": "text/javascript","exec": ["const j = pm.response.json();","if (j?.data?.id) pm.collectionVariables.set('branch_id', j.data.id);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"code\": \"SUC-01\",\n  \"name\": \"Sucursal Central\",\n  \"address\": \"Av. Principal #100\",\n  \"phone\": \"2222-1111\",\n  \"email\": \"central@empresa.com\"\n}"},
+            "url": {"raw": "{{api_base}}/branches","host": ["{{api_base}}"],"path": ["branches"]}
+          }
+        },
+        {
+          "name": "Ver sucursal",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/branches/{{branch_id}}","host": ["{{api_base}}"],"path": ["branches","{{branch_id}}"]}
+          }
+        },
+        {
+          "name": "Actualizar sucursal",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"name\": \"Sucursal Central Actualizada\",\n  \"is_active\": true\n}"},
+            "url": {"raw": "{{api_base}}/branches/{{branch_id}}","host": ["{{api_base}}"],"path": ["branches","{{branch_id}}"]}
+          }
+        },
+        {
+          "name": "Eliminar sucursal",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/branches/{{branch_id}}","host": ["{{api_base}}"],"path": ["branches","{{branch_id}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bodegas (Warehouses)",
+      "item": [
+        {
+          "name": "Listar bodegas",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {
+              "raw": "{{api_base}}/warehouses?per_page=20",
+              "host": ["{{api_base}}"],"path": ["warehouses"],
+              "query": [
+                {"key": "per_page","value": "20"},
+                {"key": "branch_id","value": "{{branch_id}}","disabled": true,"description": "Filtrar por sucursal"},
+                {"key": "search","value": "","disabled": true},
+                {"key": "active_only","value": "true","disabled": true},
+                {"key": "cursor","value": "{{next_cursor}}","disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear bodega",
+          "event": [{"listen": "test","script": {"type": "text/javascript","exec": ["const j = pm.response.json();","if (j?.data?.id) pm.collectionVariables.set('warehouse_id', j.data.id);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"branch_id\": {{branch_id}},\n  \"code\": \"BOD-01\",\n  \"name\": \"Bodega Principal\",\n  \"description\": \"Bodega central de almacenamiento\"\n}"},
+            "url": {"raw": "{{api_base}}/warehouses","host": ["{{api_base}}"],"path": ["warehouses"]}
+          }
+        },
+        {
+          "name": "Ver bodega",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/warehouses/{{warehouse_id}}","host": ["{{api_base}}"],"path": ["warehouses","{{warehouse_id}}"]}
+          }
+        },
+        {
+          "name": "Actualizar bodega",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"name\": \"Bodega Principal Actualizada\",\n  \"is_active\": true\n}"},
+            "url": {"raw": "{{api_base}}/warehouses/{{warehouse_id}}","host": ["{{api_base}}"],"path": ["warehouses","{{warehouse_id}}"]}
+          }
+        },
+        {
+          "name": "Eliminar bodega",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/warehouses/{{warehouse_id}}","host": ["{{api_base}}"],"path": ["warehouses","{{warehouse_id}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Puntos de Venta (POS)",
+      "item": [
+        {
+          "name": "Listar puntos de venta",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {
+              "raw": "{{api_base}}/pos?per_page=20",
+              "host": ["{{api_base}}"],"path": ["pos"],
+              "query": [
+                {"key": "per_page","value": "20"},
+                {"key": "branch_id","value": "{{branch_id}}","disabled": true},
+                {"key": "search","value": "","disabled": true},
+                {"key": "cursor","value": "{{next_cursor}}","disabled": true}
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear punto de venta",
+          "event": [{"listen": "test","script": {"type": "text/javascript","exec": ["const j = pm.response.json();","if (j?.data?.id) pm.collectionVariables.set('pos_id', j.data.id);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"branch_id\": {{branch_id}},\n  \"code\": \"POS-01\",\n  \"name\": \"Caja 1 - Central\"\n}"},
+            "url": {"raw": "{{api_base}}/pos","host": ["{{api_base}}"],"path": ["pos"]}
+          }
+        },
+        {
+          "name": "Ver punto de venta",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/pos/{{pos_id}}","host": ["{{api_base}}"],"path": ["pos","{{pos_id}}"]}
+          }
+        },
+        {
+          "name": "Actualizar punto de venta",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"name\": \"Caja 1 Central - Actualizada\",\n  \"is_active\": true\n}"},
+            "url": {"raw": "{{api_base}}/pos/{{pos_id}}","host": ["{{api_base}}"],"path": ["pos","{{pos_id}}"]}
+          }
+        },
+        {
+          "name": "Eliminar punto de venta",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/pos/{{pos_id}}","host": ["{{api_base}}"],"path": ["pos","{{pos_id}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Impuestos (Taxes)",
+      "item": [
+        {
+          "name": "Listar impuestos",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {
+              "raw": "{{api_base}}/taxes",
+              "host": ["{{api_base}}"],"path": ["taxes"],
+              "query": [{"key": "search","value": "","disabled": true},{"key": "active_only","value": "true","disabled": true}]
+            }
+          }
+        },
+        {
+          "name": "Crear impuesto IVA",
+          "event": [{"listen": "test","script": {"type": "text/javascript","exec": ["const j = pm.response.json();","if (j?.data?.id) pm.collectionVariables.set('tax_id', j.data.id);"]}}],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"code\": \"IVA\",\n  \"name\": \"IVA 12%\",\n  \"rate\": 12,\n  \"threshold_amount\": null,\n  \"is_included_in_price\": false\n}"},
+            "url": {"raw": "{{api_base}}/taxes","host": ["{{api_base}}"],"path": ["taxes"]},
+            "description": "IVA estándar sin monto mínimo — aplica a todos los documentos."
+          }
+        },
+        {
+          "name": "Crear impuesto con monto mínimo",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"code\": \"TIMBRE\",\n  \"name\": \"Timbre de Prensa\",\n  \"rate\": 0.5,\n  \"threshold_amount\": 100.00,\n  \"is_included_in_price\": false\n}"},
+            "url": {"raw": "{{api_base}}/taxes","host": ["{{api_base}}"],"path": ["taxes"]},
+            "description": "Solo aplica si el total del documento supera Q100.00"
+          }
+        },
+        {
+          "name": "Ver impuesto",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/taxes/{{tax_id}}","host": ["{{api_base}}"],"path": ["taxes","{{tax_id}}"]}
+          }
+        },
+        {
+          "name": "Actualizar impuesto",
+          "request": {
+            "method": "PATCH",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"rate\": 13,\n  \"is_active\": true\n}"},
+            "url": {"raw": "{{api_base}}/taxes/{{tax_id}}","host": ["{{api_base}}"],"path": ["taxes","{{tax_id}}"]}
+          }
+        },
+        {
+          "name": "Eliminar impuesto",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/taxes/{{tax_id}}","host": ["{{api_base}}"],"path": ["taxes","{{tax_id}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Config Operacional de Usuario",
+      "item": [
+        {
+          "name": "Mi configuración",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/me/config","host": ["{{api_base}}"],"path": ["me","config"]},
+            "description": "El usuario autenticado ve su sucursal/bodega/POS asignados y si están bloqueados."
+          }
+        },
+        {
+          "name": "Actualizar mi configuración",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"branch_id\": {{branch_id}},\n  \"warehouse_id\": {{warehouse_id}},\n  \"point_of_sale_id\": {{pos_id}}\n}"},
+            "url": {"raw": "{{api_base}}/me/config","host": ["{{api_base}}"],"path": ["me","config"]},
+            "description": "El usuario cambia su sucursal/bodega/POS activo. Campos bloqueados son ignorados (a menos que sea SuperAdmin)."
+          }
+        },
+        {
+          "name": "Ver config de otro usuario (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "url": {"raw": "{{api_base}}/users/1/operational-config","host": ["{{api_base}}"],"path": ["users","1","operational-config"]}
+          }
+        },
+        {
+          "name": "Asignar y bloquear config de usuario (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type","value": "application/json"},{"key": "Accept","value": "application/json"},{"key": "Authorization","value": "Bearer {{token}}"}],
+            "body": {"mode": "raw","raw": "{\n  \"branch_id\": {{branch_id}},\n  \"warehouse_id\": {{warehouse_id}},\n  \"point_of_sale_id\": {{pos_id}},\n  \"branch_locked\": true,\n  \"warehouse_locked\": true,\n  \"point_of_sale_locked\": false\n}"},
+            "url": {"raw": "{{api_base}}/users/1/operational-config","host": ["{{api_base}}"],"path": ["users","1","operational-config"]},
+            "description": "Admin asigna sucursal y bodega fijas (locked=true). El usuario no las podrá cambiar. El POS sí puede cambiarlo."
+          }
+        }
+      ]
+    }
+  ]
+}

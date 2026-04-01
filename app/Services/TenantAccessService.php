@@ -14,6 +14,7 @@ use Spatie\Permission\PermissionRegistrar;
 class TenantAccessService
 {
     public const DEFAULT_PERMISSION_NAMES = [
+        // Usuarios y permisos (base)
         'users.view',
         'users.create',
         'users.update',
@@ -22,6 +23,29 @@ class TenantAccessService
         'permissions.create',
         'permissions.update',
         'permissions.delete',
+        // Sucursales
+        'branches.view',
+        'branches.create',
+        'branches.update',
+        'branches.delete',
+        // Bodegas
+        'warehouses.view',
+        'warehouses.create',
+        'warehouses.update',
+        'warehouses.delete',
+        // Puntos de venta
+        'pos.view',
+        'pos.create',
+        'pos.update',
+        'pos.delete',
+        // Impuestos
+        'taxes.view',
+        'taxes.create',
+        'taxes.update',
+        'taxes.delete',
+        // Configuración operacional de usuario
+        'user-config.view',
+        'user-config.update',
     ];
 
     public function __construct(

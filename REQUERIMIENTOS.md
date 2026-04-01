@@ -12,27 +12,34 @@
 
 ## Pendientes
 
-### [ACCIÓN REQUERIDA] Matar procesos Vite huérfanos al iniciar
-
-El puerto del ERP quedó fijo en `5177` con `strictPort: true`. El problema es que procesos anteriores de Vite se quedan corriendo en segundo plano y bloquean el puerto.
-
-**Solución:** Antes de correr `npm run dev`, matar cualquier proceso Vite activo:
-
-```bash
-pkill -f "vite" 2>/dev/null; npm run dev
-```
-
-O agregar un script en `package.json` que lo haga automáticamente:
-
-```json
-"dev": "pkill -f vite; vite"
-```
-
-Implementar lo que sea más conveniente para el flujo de trabajo.
+_(sin pendientes)_
 
 ---
 
 ## Bitácora — Intervenciones de Claude Code
+
+### 2026-04-01 — Módulo Inventario
+
+Implementado completo en `appapi`:
+
+- **Migraciones tenant:** `categories`, `units`, `products`, `stock`, `stock_movements`
+- **Modelos:** Category, Unit, Product, Stock, StockMovement
+- **Controllers:** CategoryController, UnitController, ProductController, StockController
+- **Endpoints stock:** `stock/in`, `stock/out`, `stock/adjust`, historial de movimientos, stock por bodega
+- **Lógica:** transaccional, registra `before_quantity`/`after_quantity`, no permite stock negativo
+
+### 2026-04-01 — Módulo Compras
+
+Implementado completo en `appapi`:
+
+- **Migraciones tenant:** `suppliers`, `purchase_orders`, `purchase_order_items`, `purchase_receptions`, `purchase_reception_items`, `accounts_payable`
+- **Modelos:** Supplier, PurchaseOrder, PurchaseOrderItem, PurchaseReception, PurchaseReceptionItem, AccountPayable
+- **Controllers:** SupplierController, PurchaseOrderController, PurchaseReceptionController, AccountsPayableController
+- **Flujo automático en recepción:** ingresa stock (stock_in) + actualiza `received_quantity` + cambia estado de OC + genera CXP
+- **CXP:** pago parcial/total con cambio de estado, cancelación
+- **Estados OC:** draft → sent → partial/received | cancelled
+
+**Siguiente módulo pendiente:** Ventas (clientes, cotizaciones, pedidos, facturas, CXC)
 
 ### 2026-04-01 — Reparación de UsersPage.tsx y archivos relacionados
 

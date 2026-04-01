@@ -5,9 +5,13 @@ declare(strict_types=1);
 use App\Http\Controllers\Api\System\TenantRegistrationController;
 use App\Http\Controllers\Api\Tenant\AuthController;
 use App\Http\Controllers\Api\Tenant\BranchController;
+use App\Http\Controllers\Api\Tenant\CategoryController;
 use App\Http\Controllers\Api\Tenant\PermissionController;
 use App\Http\Controllers\Api\Tenant\PointOfSaleController;
+use App\Http\Controllers\Api\Tenant\ProductController;
+use App\Http\Controllers\Api\Tenant\StockController;
 use App\Http\Controllers\Api\Tenant\TaxController;
+use App\Http\Controllers\Api\Tenant\UnitController;
 use App\Http\Controllers\Api\Tenant\UserController;
 use App\Http\Controllers\Api\Tenant\UserOperationalConfigController;
 use App\Http\Controllers\Api\Tenant\WarehouseController;
@@ -102,6 +106,56 @@ $tenantRoutes = function (): void {
             ->middleware('role_or_permission:SuperAdmin|taxes.update');
         Route::delete('/taxes/{tax}', [TaxController::class, 'destroy'])
             ->middleware('role_or_permission:SuperAdmin|taxes.delete');
+
+        // ── Categorías ────────────────────────────────────────────────────────
+        Route::get('/categories', [CategoryController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|categories.view');
+        Route::post('/categories', [CategoryController::class, 'store'])
+            ->middleware('role_or_permission:SuperAdmin|categories.create');
+        Route::get('/categories/{category}', [CategoryController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|categories.view');
+        Route::match(['put', 'patch'], '/categories/{category}', [CategoryController::class, 'update'])
+            ->middleware('role_or_permission:SuperAdmin|categories.update');
+        Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])
+            ->middleware('role_or_permission:SuperAdmin|categories.delete');
+
+        // ── Unidades de medida ────────────────────────────────────────────────
+        Route::get('/units', [UnitController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|units.view');
+        Route::post('/units', [UnitController::class, 'store'])
+            ->middleware('role_or_permission:SuperAdmin|units.create');
+        Route::get('/units/{unit}', [UnitController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|units.view');
+        Route::match(['put', 'patch'], '/units/{unit}', [UnitController::class, 'update'])
+            ->middleware('role_or_permission:SuperAdmin|units.update');
+        Route::delete('/units/{unit}', [UnitController::class, 'destroy'])
+            ->middleware('role_or_permission:SuperAdmin|units.delete');
+
+        // ── Productos ─────────────────────────────────────────────────────────
+        Route::get('/products', [ProductController::class, 'index'])
+            ->middleware('role_or_permission:SuperAdmin|products.view');
+        Route::post('/products', [ProductController::class, 'store'])
+            ->middleware('role_or_permission:SuperAdmin|products.create');
+        Route::get('/products/{product}', [ProductController::class, 'show'])
+            ->middleware('role_or_permission:SuperAdmin|products.view');
+        Route::match(['put', 'patch'], '/products/{product}', [ProductController::class, 'update'])
+            ->middleware('role_or_permission:SuperAdmin|products.update');
+        Route::delete('/products/{product}', [ProductController::class, 'destroy'])
+            ->middleware('role_or_permission:SuperAdmin|products.delete');
+
+        // ── Stock ─────────────────────────────────────────────────────────────
+        Route::get('/products/{product}/stock', [StockController::class, 'byProduct'])
+            ->middleware('role_or_permission:SuperAdmin|stock.view');
+        Route::get('/warehouses/{warehouse}/stock', [StockController::class, 'byWarehouse'])
+            ->middleware('role_or_permission:SuperAdmin|stock.view');
+        Route::post('/products/{product}/stock/in', [StockController::class, 'in'])
+            ->middleware('role_or_permission:SuperAdmin|stock.in');
+        Route::post('/products/{product}/stock/out', [StockController::class, 'out'])
+            ->middleware('role_or_permission:SuperAdmin|stock.out');
+        Route::post('/products/{product}/stock/adjust', [StockController::class, 'adjust'])
+            ->middleware('role_or_permission:SuperAdmin|stock.adjust');
+        Route::get('/products/{product}/movements', [StockController::class, 'movements'])
+            ->middleware('role_or_permission:SuperAdmin|stock.view');
 
         // ── Configuración operacional de usuario ──────────────────────────────
         Route::get('/me/config', [UserOperationalConfigController::class, 'myConfig']);

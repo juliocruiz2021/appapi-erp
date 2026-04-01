@@ -8,15 +8,17 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
+    libpq-dev \
     zip \
     unzip \
-    default-mysql-client \
+    postgresql-client \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # PHP extensions
 RUN docker-php-ext-install \
-    pdo_mysql \
+    pdo_pgsql \
+    pgsql \
     mbstring \
     exif \
     pcntl \

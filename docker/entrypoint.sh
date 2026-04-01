@@ -17,6 +17,7 @@ fi
 
 # Sobreescribir variables de conexion con las del entorno Docker
 if [ -n "$DB_HOST" ]; then
+    sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=${DB_CONNECTION}/" .env
     sed -i "s/^DB_HOST=.*/DB_HOST=${DB_HOST}/" .env
     sed -i "s/^DB_PORT=.*/DB_PORT=${DB_PORT}/" .env
     sed -i "s/^DB_DATABASE=.*/DB_DATABASE=${DB_DATABASE}/" .env
@@ -34,13 +35,13 @@ else
     echo "      APP_KEY ya existe"
 fi
 
-# Esperar MySQL
-echo "[3/5] Esperando MySQL en ${DB_HOST}:${DB_PORT}..."
-until php -r "new PDO('mysql:host=${DB_HOST};port=${DB_PORT}', '${DB_USERNAME}', '${DB_PASSWORD}');" 2>/dev/null; do
-    echo "      MySQL no disponible aun, reintentando..."
+# Esperar PostgreSQL
+echo "[3/5] Esperando PostgreSQL en ${DB_HOST}:${DB_PORT}..."
+until php -r "new PDO('pgsql:host=${DB_HOST};port=${DB_PORT};dbname=${DB_DATABASE}', '${DB_USERNAME}', '${DB_PASSWORD}');" 2>/dev/null; do
+    echo "      PostgreSQL no disponible aun, reintentando..."
     sleep 2
 done
-echo "      MySQL listo"
+echo "      PostgreSQL listo"
 
 # Migraciones centrales
 echo "[4/5] Ejecutando migraciones centrales"

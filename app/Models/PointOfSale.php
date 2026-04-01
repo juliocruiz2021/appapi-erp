@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PointOfSale extends Model
 {
+    protected $table = 'points_of_sale';
+
     protected $fillable = ['branch_id', 'code', 'name', 'is_active'];
 
     protected $casts = ['is_active' => 'boolean'];

@@ -182,6 +182,22 @@
   - Observabilidad por tenant con logs enriquecidos y metricas por base fisica.
   - Estrategia futura de lectura/escritura separada por tenant enterprise si crece la carga.
 
+### Hito 8 - Hotfix y cierre de Etapa 1
+- Bugfix en `App\Models\PointOfSale`: Laravel pluralizaba el nombre de la clase como `point_of_sales` en lugar de `points_of_sale`, causando un SQLSTATE[42S02] al consultar la tabla.
+  - Solucion: declarar `protected $table = 'points_of_sale'` explicitamente en el modelo.
+- Auditoria cruzada de todos los modelos tenant contra sus tablas en migracion completada el `2026-04-01`:
+  - `User` → `users` ✅
+  - `AuditLog` → `audit_logs` ✅
+  - `Branch` → `branches` ✅
+  - `Warehouse` → `warehouses` ✅
+  - `Tax` → `taxes` ✅
+  - `UserOperationalConfig` → `user_operational_configs` ✅
+  - `PointOfSale` → `points_of_sale` ✅ (requirio `$table` explicito)
+- Regla de convencion fijada: todo modelo con nombre de clase compuesto (multi-palabra) debe declarar `$table` explicitamente para evitar que Laravel infiera mal la pluralizacion.
+- Entorno Docker validado operativo con `docker compose up -d --build`.
+- Smoke test confirmado: login JWT + `/me` + `/branches` respondiendo correctamente.
+- Coleccion Postman `etapa1-estructura.collection.json` validada y vigente.
+
 ## Estado final
 - API central y tenant-aware operativa en un solo codebase.
 - Provisioning automatico de BD por tenant funcionando con prefijo `app_`.
@@ -190,6 +206,8 @@
 - Roles y permisos aislados dentro de cada base tenant.
 - Auditoria persistente y respuestas JSON estandarizadas activas.
 - Demo `demo1` completamente lista para pruebas manuales con Postman o curl.
+- Etapa 1 ERP (estructura organizacional) completa y validada en Docker.
 
 ## Notas operativas
 - En PHP 8.5 Laravel 11 todavia muestra deprecaciones del archivo de base de datos del vendor por `PDO::MYSQL_ATTR_SSL_CA`. La configuracion local del proyecto ya fue corregida, pero el vendor aun emite ese warning en algunos comandos Artisan.
+- Todo modelo con nombre de clase compuesto (ej. `PointOfSale`, `UserOperationalConfig`) debe tener `protected $table` declarado explicitamente. Laravel puede inferir mal la pluralizacion en esos casos.
